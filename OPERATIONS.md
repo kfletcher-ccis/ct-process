@@ -1,10 +1,10 @@
 # Operations Guide
 
-## Daily Workflow
+## Monthly Workflow
 
 ### Step 1
 
-Export the required files from RE NXT.
+Export the required files from Colleague.
 
 Required files:
 
@@ -20,11 +20,17 @@ RENXT-EXPORT_Military_File_[DATE].csv
 RENXT-EXPORT_Relationships_File_[DATE].csv
 ```
 
-Also provide:
+Create/Export the required file from RENXT:
 
 ```text
 CT_Process__Existing_IDs.xlsx
+```
 
+---
+
+Ensure the following file is updated as needed:
+
+```text
 Degree-Location Program Codes.xlsx
 ```
 
