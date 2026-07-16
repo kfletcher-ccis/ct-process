@@ -120,3 +120,112 @@ ESRDateGrad within 90 days
 ### Duplicate Address Block
 
 Second address block is cleared when:
+
+```text
+AddrType_2 = AddrType
+```
+
+### Major Import IDs
+
+Corrected:
+
+```text
+ESRMajESRImpID
+```
+
+to appear once per major set.
+
+### Minor Import IDs
+
+Corrected:
+
+```text
+ESRMinESRImpID
+```
+
+to appear once per minor set.
+
+### Attribute Import IDs
+
+Corrected:
+
+```text
+ESRAttrESRImpID
+```
+
+to appear once per attribute set.
+
+### Email Formatting
+
+Emails now output as lowercase.
+
+Example:
+
+```text
+THISISMYEMAIL@EMAIL.COM
+
+↓
+
+thisismyemail@email.com
+```
+
+### Name Formatting
+
+Examples:
+
+```text
+Doe-smith
+→
+Doe-Smith
+
+Kerri-ann
+→
+Kerri-Ann
+
+Mcdonald
+→
+McDonald
+```
+
+---
+
+## Removed
+
+### Debug Output
+
+Removed:
+
+```text
+ASSOCIATE IN ARTS ->
+...
+```
+
+Removed:
+
+```text
+Done
+```
+
+in favor of progress reporting and diagnostics.
+
+---
+
+# [2026-07-01]
+
+## Added
+
+### Initial Architecture
+
+- Canonical constituent model
+- Degree mapping
+- Campus mapping
+- Education transformation
+- Military transformation
+- Relationship transformation
+- Existing ID matching
+
+### Outputs
+
+- Constituent JSON
+- Diagnostics JSON
+- Schema Analysis JSON
