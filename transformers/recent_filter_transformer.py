@@ -18,7 +18,7 @@ from helpers.common import is_within_last_days
 
 
 class RecentFilterTransformer:
-    def __init__(self, days: int = 90):
+    def __init__(self, days: int = 120):
         self.days = days
 
     def apply(self, constituent):

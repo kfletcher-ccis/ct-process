@@ -125,24 +125,145 @@ class CoreTransformer:
 
         return records
 
-
     def _build_employment_records(self, row):
-        positions = split_pipe_values(row.get("ORPos", ""))
-        professions = split_pipe_values(row.get("ORProf", ""))
-        from_dates = split_pipe_values(row.get("ORFromDate", ""))
-        to_dates = split_pipe_values(row.get("ORToDate", ""))
-        industries = split_pipe_values(row.get("ORIndustry", ""))
-        max_count = max(len(positions), len(professions), len(from_dates), len(to_dates), len(industries))
+        """
+        Build employment records while preserving positional alignment
+        across all pipe-delimited source fields.
+
+        Blank values and N/A placeholders must remain in position until
+        the corresponding employment fields have been matched by index.
+        """
+
+        def split_preserving_positions(value):
+            """
+            Split a double-pipe-delimited value without removing empty
+            values or N/A placeholders.
+
+            Examples:
+
+            "A||B"      -> ["A", "B"]
+            "N/A||Date" -> ["N/A", "Date"]
+            "A||||C"    -> ["A", "", "C"]
+            """
+
+            if value is None:
+                return []
+
+            text = str(value).strip()
+
+            if not text:
+                return []
+
+            return [
+                item.strip()
+                for item in text.split("||")
+            ]
+
+        def normalize_optional_date(value):
+            """
+            Convert source null placeholders to an empty string after
+            positional alignment has been preserved.
+            """
+
+            cleaned = clean_null_value(value)
+
+            if cleaned.upper() in {
+                "N/A",
+                "NA",
+                "NONE",
+                "NULL",
+            }:
+                return ""
+
+            return cleaned
+
+        positions = split_preserving_positions(
+            row.get("ORPos", "")
+        )
+
+        professions = split_preserving_positions(
+            row.get("ORProf", "")
+        )
+
+        from_dates = split_preserving_positions(
+            row.get("ORFromDate", "")
+        )
+
+        to_dates = split_preserving_positions(
+            row.get("ORToDate", "")
+        )
+
+        industries = split_preserving_positions(
+            row.get("ORIndustry", "")
+        )
+
+        organizations = split_preserving_positions(
+            row.get("ORFullName", "")
+        )
+
+        max_count = max(
+            len(positions),
+            len(professions),
+            len(from_dates),
+            len(to_dates),
+            len(industries),
+            len(organizations),
+            0,
+        )
+
         records = []
+
         for i in range(max_count):
-            if not any([safe_get(positions, i), safe_get(professions, i), safe_get(industries, i)]):
+
+            position = clean_null_value(
+                safe_get(positions, i)
+            )
+
+            profession = clean_null_value(
+                safe_get(professions, i)
+            )
+
+            from_date = normalize_optional_date(
+                safe_get(from_dates, i)
+            )
+
+            to_date = normalize_optional_date(
+                safe_get(to_dates, i)
+            )
+
+            industry = clean_null_value(
+                safe_get(industries, i)
+            )
+
+            organization = clean_null_value(
+                safe_get(organizations, i)
+            )
+
+            if not organization:
+                organization = "Columbia College"
+
+            if not any([
+                position,
+                profession,
+                from_date,
+                to_date,
+                industry,
+            ]):
                 continue
-            records.append(EmploymentRecord(
-                position=safe_get(positions, i),
-                profession=safe_get(professions, i),
-                from_date=safe_get(from_dates, i),
-                to_date=safe_get(to_dates, i),
-                industry=safe_get(industries, i),
-                is_primary=(i == 0),
-            ))
+
+            records.append(
+                EmploymentRecord(
+                    organization=organization,
+                    position=position,
+                    profession=profession,
+                    from_date=from_date,
+                    to_date=to_date,
+                    industry=industry,
+                    is_employer=True,
+                    is_primary=(i == 0),
+                    relationship="Employer",
+                    reciprocal="Employee",
+                )
+            )
+
         return records
