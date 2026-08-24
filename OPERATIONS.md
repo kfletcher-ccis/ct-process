@@ -1,304 +1,211 @@
-# Operations Guide
+# OPERATIONS GUIDE
 
-## Monthly Workflow
+## Running the Process
 
-### Step 1
+Execute:
 
-Export the required files from Colleague.
-
-Required files:
-
-```text
-RENXT-EXPORT_[DATE].csv
-
-RENXT-EXPORT_Activities_File_[DATE].csv
-
-RENXT-EXPORT_Education_File_[DATE].csv
-
-RENXT-EXPORT_Military_File_[DATE].csv
-
-RENXT-EXPORT_Relationships_File_[DATE].csv
+```powershell
+python C:\Users\kfletcher\CTinput\run_ct_process.py
 ```
 
-Create/Export the required file from RENXT:
+The process is location-independent and uses:
+
+```python
+SCRIPT_DIR
+```
+
+for file resolution.
+
+---
+
+## Required Inputs
+
+Drop the following files into the CTinput root folder:
 
 ```text
+RENXT-EXPORT_*.csv
+RENXT-EXPORT_Activities_File_*.csv
+RENXT-EXPORT_Education_File_*.csv
+RENXT-EXPORT_Military_File_*.csv
+RENXT-EXPORT_Relationships_File_*.csv
+
 CT_Process__Existing_IDs.xlsx
 ```
 
 ---
 
-Ensure the following file is updated as needed:
+## File Selection
+
+When multiple export files match:
 
 ```text
-Degree-Location Program Codes.xlsx
+Newest modified file wins
+```
+
+This prevents stale runs from being selected.
+
+---
+
+## Runtime Flow
+
+```text
+1. Locate Source Files
+2. Load Exports
+3. Build Canonical Model
+4. Generate Constituents JSON
+5. Generate Diagnostics JSON
+6. Generate Schema Analysis JSON
+7. Generate Review Workbook
+8. Generate Import CSV
+9. Generate Process Summary Files
+10. Archive Run Artifacts
 ```
 
 ---
 
-### Step 2
+## Generated Outputs
 
-Copy all files into the project root folder.
-
-Example:
+### JSON
 
 ```text
-C:\Users\kfletcher\Downloads\CTinput
+constituents_*.json
+diagnostics_*.json
+schema_analysis_*.json
+process_summary_*.json
+```
+
+### Text
+
+```text
+process_summary_*.txt
+```
+
+### User Review
+
+```text
+ct_process_review_*.xlsx
+```
+
+### CT Process Import
+
+```text
+ct_process_import_*.csv
 ```
 
 ---
 
-### Step 3
+## Archival Structure
 
-Run the process.
+Successful runs are archived into:
 
-```powershell
-python run_ct_process.py
+```text
+output\
+└── YYYY-MM-DD\
+```
+
+Each folder contains:
+
+```text
+Source files
+Existing IDs workbook
+JSON outputs
+Summary outputs
+Review workbook
+Import CSV
 ```
 
 ---
 
-### Step 4
+## Diagnostics
 
-Review the generated workbook.
+The following files support troubleshooting:
 
-Open:
+### diagnostics.json
+
+Contains:
 
 ```text
-output\ct_process_review.xlsx
+total_constituents
+new_records
+existing_records
+phone_records
+employment_records
+degree_records
+military_records
+relationship_records
+warnings
+relationship_warnings
 ```
 
-Review:
+### schema_analysis.json
 
-- NEW records
-- ConsCodes
-- Employment updates
-- Education updates
-- Relationships
-- Warning flags
-
----
-
-### Step 5
-
-Import new constituents.
-
-Upload:
+Contains:
 
 ```text
-output\ct_process_import.csv
-```
-
-to CT Process.
-
----
-
-# Operational Validation Checklist
-
-Review the workbook for:
-
-## NEW Constituents
-
-Verify:
-
-```text
-ConsCode assigned
-
-Employee
-
-Alumni
-
-Employee + Alumni
-```
-
-No NEW record should have blank ConsCode.
-
----
-
-## Existing Constituents
-
-Verify only recent activity appears.
-
-Education:
-
-```text
-graduation date within 90 days
-```
-
-Employment:
-
-```text
-ORFromDate within 90 days
-
-or
-
-ORToDate within 90 days
+max_phone_records
+max_employment_records
+max_degree_records
+max_major_records
+max_minor_records
+max_military_records
+max_relationship_records
 ```
 
 ---
 
-## Degree Translation
+## Process Summary
 
-Verify:
+### process_summary.txt
 
-```text
-ESRDegree
-```
+Human-readable run summary.
 
-contains translated values.
+### process_summary.json
 
----
+Machine-readable run summary.
 
-## Campus Translation
-
-Verify:
+Intended for:
 
 ```text
-ESRCampus
-```
-
-contains translated values.
-
----
-
-## Email Addresses
-
-Verify:
-
-```text
-all email values are lowercase
-```
-
----
-
-# Troubleshooting
-
-## Excel Workbook Will Not Save
-
-Error:
-
-```text
-PermissionError
-```
-
-Cause:
-
-Workbook is already open.
-
-Resolution:
-
-Close the workbook and rerun.
-
----
-
-## Missing Transformer Module
-
-Error:
-
-```text
-No module named transformers.*
-```
-
-Resolution:
-
-Verify:
-
-```text
-transformers\
-    __init__.py
-```
-
-exists and the transformer file was copied.
-
----
-
-## Degree Lookup Issues
-
-Verify:
-
-```text
-Degree-Location Program Codes.xlsx
-```
-
-contains the expected mappings.
-
----
-
-# Future Automation Architecture
-
-## Current
-
-```text
-RE NXT Export
-      ↓
-Python
-      ↓
-Review Workbook
-      ↓
-CSV
-      ↓
-CT Process
-```
-
----
-
-## Planned
-
-```text
+Power Automate
 SharePoint
-      ↓
-Power Automate
-      ↓
-Python Runtime
-      ↓
-Review Workbook
-      ↓
-CSV
-      ↓
-CT Process
+Email notifications
+Monitoring
 ```
 
 ---
 
-# Existing Constituent Update Vision
+## Existing Record Update Evaluation
 
-Future architecture:
+Update eligibility is calculated after filtering.
 
-```text
-RE NXT Export
-      ↓
-Python Change Detection
-      ↓
-existing_updates.json
-      ↓
-Power Automate
-      ↓
-Blackbaud Connector
-      ↓
-Update Constituent
-```
-
-Potential updates:
+Supported update actions:
 
 ```text
-Employment
-
-Education
-
-Organizational Relationships
+EMPLOYMENT
+EDUCATION
 ```
 
-This avoids sending EXISTING records back through CT Process and instead updates RE NXT directly.
+These appear in:
+
+```json
+update_flags
+update_actions
+```
+
+within the canonical constituent JSON.
 
 ---
 
-# Release Process
+## Future Integrations
 
-Before committing code:
+Planned integration path:
 
-1. Run test export.
-2. Review workbook.
-3. Validate diagnostics.
-4. Validate schema analysis.
-5. Commit changes.
-6. Update CHANGELOG.md.
+```text
+Constituents JSON
+        ↓
+SharePoint
+        ↓
+Power Automate
+        ↓
+SKY API Operations
+```
