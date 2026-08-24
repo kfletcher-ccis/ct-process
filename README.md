@@ -1,144 +1,197 @@
-# CT Process Constituent Transformation Engine
+# CT Process ETL
 
-A Python-based ETL application that transforms Blackbaud Raiser's Edge NXT export files into CT Process import files, review workbooks, diagnostics, and constituent update datasets.
+## Overview
 
-The project was designed to:
+CT Process ETL transforms RE NXT exports into a canonical constituent model and produces operational outputs for review, import, diagnostics, and future API-driven integrations.
 
-- Create NEW constituents for CT Process
-- Detect update activity for EXISTING constituents
-- Normalize source data
-- Improve data quality
-- Generate review artifacts prior to import
-- Serve as a foundation for future RE NXT automation
+The project has evolved from a CSV transformation utility into a canonical constituent processing platform.
+
+## Core Capabilities
+
+### Constituent Matching
+
+Supports:
+
+- NEW records
+- EXISTING records
+
+Matching methods:
+
+- Lookup ID
+- SKY ID
+- ConsImportID
 
 ---
 
-# Features
+### Canonical Constituent Model
 
-## Data Transformation
+Each constituent is assembled into a structured object model:
 
-- Degree translation
-- Campus translation
-- ConsCode determination
-- Name normalization
-- Email address normalization
-- Relationship processing
-- Military processing
-- Employment processing
-- Activity injection
+```text
+Constituent
+├── core
+├── phones[]
+├── employment[]
+├── education[]
+├── military[]
+└── relationships[]
+```
 
-## Data Quality
+This canonical representation becomes the system of record for all downstream outputs.
 
-- Duplicate address suppression
-- Existing-record filtering
-- Education filtering
-- Employment filtering
-- Review workbook generation
+---
+
+### Employment Processing
+
+Employment records are generated from pipe-delimited source fields:
+
+```text
+ORPos
+ORProf
+ORFromDate
+ORToDate
+ORIndustry
+```
+
+Features:
+
+- Positional alignment preservation
+- Multiple employment records supported
+- Null/N/A normalization
+- Recent employment detection
+
+---
+
+### Education Processing
+
+Education records are transformed into structured degree objects.
+
+Features:
+
+- Degree support
+- Major support
+- Minor support
+- Graduation date filtering
+
+---
+
+### Recent Activity Filtering
+
+Employment and education records are evaluated against a:
+
+```text
+120-day activity window
+```
+
+Used to identify actionable updates for EXISTING records.
+
+---
+
+### Existing Record Update Detection
+
+Existing constituents are evaluated for:
+
+```text
+EMPLOYMENT updates
+EDUCATION updates
+```
+
+The resulting metadata is exposed through:
+
+```json
+{
+  "update_flags": {
+    "needs_employment_update": true,
+    "needs_education_update": false,
+    "needs_update": true
+  },
+
+  "update_actions": [
+    "EMPLOYMENT"
+  ]
+}
+```
+
+---
 
 ## Outputs
 
-- Review Workbook (.xlsx)
-- CT Process Import (.csv)
-- Constituent JSON
-- Diagnostics Report
-- Schema Analysis
-
----
-
-# Project Structure
+Each run generates:
 
 ```text
-build_constituents.py
+constituents_*.json
+diagnostics_*.json
+schema_analysis_*.json
 
-builders/
-    constituent_builder.py
+process_summary_*.json
+process_summary_*.txt
 
-helpers/
-    common.py
-    lookups.py
-    name_normalization.py
-
-loaders/
-    core_loader.py
-    education_loader.py
-    activities_loader.py
-    military_loader.py
-    relationship_loader.py
-
-transformers/
-    core_transformer.py
-    education_transformer.py
-    relationship_transformer.py
-    military_transformer.py
-    conscode_transformer.py
-    recent_filter_transformer.py
-
-exporters/
-    csv_exporter.py
-    xlsx_review_exporter.py
-
-tests/
-    run_milestone1.py
-    run_csv_export.py
-    run_xlsx_review.py
-
-output/
+ct_process_review_*.xlsx
+ct_process_import_*.csv
 ```
 
 ---
 
-# Required Input Files
-
-The application expects:
+## Output Folder Structure
 
 ```text
-RENXT-EXPORT_[DATE].csv
+output\
+└── YYYY-MM-DD\
+    ├── source files
+    ├── CT_Process__Existing_IDs_*.xlsx
+    ├── constituents_*.json
+    ├── diagnostics_*.json
+    ├── schema_analysis_*.json
+    ├── process_summary_*.json
+    ├── process_summary_*.txt
+    ├── ct_process_review_*.xlsx
+    └── ct_process_import_*.csv
+```
 
-RENXT-EXPORT_Activities_File_[DATE].csv
+Each folder is a complete historical processing run.
 
-RENXT-EXPORT_Education_File_[DATE].csv
+---
 
-RENXT-EXPORT_Military_File_[DATE].csv
+## Architecture
 
-RENXT-EXPORT_Relationships_File_[DATE].csv
+```text
+RE NXT Exports
+        ↓
+Loaders
+        ↓
+Transformers
+        ↓
+Canonical Constituent Model
+        ↓
+Filters
+        ↓
+Update Detection
+        ↓
+Outputs
+```
 
-CT_Process__Existing_IDs.xlsx
+Produced outputs:
 
-Degree-Location Program Codes.xlsx
+```text
+JSON
+XLSX Review Workbook
+CT Process CSV
+Diagnostics
+Process Summary
 ```
 
 ---
 
-# Installation
+## Future Direction
 
-## Python Version
-
-Recommended:
+Designed to support:
 
 ```text
-Python 3.11+
+Canonical JSON
+        ↓
+Power Automate
+        ↓
+SKY API
 ```
 
-## Install Dependencies
-
-```powershell
-pip install pandas
-pip install openpyxl
-```
-
----
-
-# Usage
-
-## Generate Review Workbook
-
-```powershell
-python tests\run_xlsx_review.py ^
-    --input-dir . ^
-    --output-dir .\output
-```
-
-Outputs:
-
-```text
-output\ct_process_review
+without requiring additional business-rule evaluation downstream.
