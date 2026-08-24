@@ -1,5 +1,6 @@
 from transformers.conscode_transformer import ConsCodeTransformer
 from transformers.recent_filter_transformer import RecentFilterTransformer
+from transformers.existing_update_transformer import ExistingUpdateTransformer
 
 class ConstituentBuilder:
 
@@ -45,13 +46,41 @@ class ConstituentBuilder:
                     lookup_id
                 ].relationships = records
                 
-        # Apply ConsCode rules first so NEW values are based on the full model.
-        for constituent in constituents.values():
-            self.conscode_transformer.apply(constituent)
+        # -----------------------------------------------------
+        # Apply ConsCode rules using the complete model
+        # -----------------------------------------------------
 
-        # Then filter output records for recent activity.
-        recent_filter_transformer = RecentFilterTransformer(days=90)
         for constituent in constituents.values():
-            recent_filter_transformer.apply(constituent)
+            self.conscode_transformer.apply(
+                constituent
+            )
+
+        # -----------------------------------------------------
+        # Retain only actionable recent employment/education
+        # -----------------------------------------------------
+
+        recent_filter_transformer = (
+            RecentFilterTransformer(
+                days=120
+            )
+        )
+
+        for constituent in constituents.values():
+            recent_filter_transformer.apply(
+                constituent
+            )
+
+        # -----------------------------------------------------
+        # Mark EXISTING records requiring update actions
+        # -----------------------------------------------------
+
+        existing_update_transformer = (
+            ExistingUpdateTransformer()
+        )
+
+        for constituent in constituents.values():
+            existing_update_transformer.apply(
+                constituent
+            )
 
         return constituents
