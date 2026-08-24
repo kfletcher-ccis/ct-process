@@ -1,231 +1,350 @@
-# Changelog
+# CHANGELOG
 
-All notable changes to the CT Process Constituent Transformation Engine are documented in this file.
-
-The format is based on:
-
-- Added
-- Changed
-- Fixed
-- Removed
+All notable changes to the CT Process ETL project are documented in this file.
 
 ---
 
-# [Unreleased]
-
-## Planned
-
-### Automation
-
-- SharePoint-triggered processing
-- Power Automate integration
-- Existing constituent update automation
-- Run-history tracking
-- Email notifications
-
-### RE NXT Integration
-
-- Existing constituent update detection
-- Education update JSON output
-- Employment update JSON output
-- Organizational relationship update JSON output
-
----
-
-# [2026-07-15]
+# v1.5.0 - Automated Reporting Foundation
+Date: August 2026
 
 ## Added
 
-### Review Workbook
+- Process summary generation:
+  - process_summary.json
+  - process_summary.txt
 
-- XLSX review workbook export
-- Grouped workbook sections
-- Freeze panes
-- Filters
-- Color-coded data blocks
+- Enhanced runtime reporting.
 
-### Transformations
+- Structured machine-readable summary output.
 
-- Name normalization
-- Email normalization
-- Existing-record filtering
-- ConsCode generation
+- Foundation for:
+  - Power Automate notifications
+  - SharePoint-based automation
+  - Email notifications
+  - Operational monitoring
 
-### Outputs
+## Generated Artifacts
 
-- Review workbook generation
-- CSV export generation
-- Diagnostics report generation
-- Schema analysis generation
+- constituents_*.json
+- diagnostics_*.json
+- schema_analysis_*.json
+- process_summary_*.json
+- process_summary_*.txt
+- ct_process_review_*.xlsx
+- ct_process_import_*.csv
 
 ---
+
+# v1.4.0 - Review Workbook Improvements
+
+Date: August 2026
 
 ## Changed
 
-### Workbook Layout
+- Review workbook now operates against the canonical transformed constituent model.
 
-Added grouped workbook sections:
+## Benefits
 
-```text
-Core
-Phone
-Employment
-Education
-Military
-Relationships
-```
-
-### Freeze Pane
-
-Changed from:
-
-```text
-A3
-```
-
-to:
-
-```text
-C3
-```
-
-### Export Sorting
-
-NEW constituents are now exported before EXISTING constituents.
-
-### Employment Filtering
-
-Employment is retained only when:
-
-```text
-ORFromDate within 90 days
-
-OR
-
-ORToDate within 90 days
-```
-
-### Education Filtering
-
-EXISTING constituents retain only degrees where:
-
-```text
-ESRDateGrad within 90 days
-```
+- Workbook reflects actual import behavior.
+- Improves validation accuracy.
+- Reduces discrepancies between review and import outputs.
 
 ---
 
-## Fixed
+# v1.3.0 - Existing Record Update Framework
 
-### Duplicate Address Block
-
-Second address block is cleared when:
-
-```text
-AddrType_2 = AddrType
-```
-
-### Major Import IDs
-
-Corrected:
-
-```text
-ESRMajESRImpID
-```
-
-to appear once per major set.
-
-### Minor Import IDs
-
-Corrected:
-
-```text
-ESRMinESRImpID
-```
-
-to appear once per minor set.
-
-### Attribute Import IDs
-
-Corrected:
-
-```text
-ESRAttrESRImpID
-```
-
-to appear once per attribute set.
-
-### Email Formatting
-
-Emails now output as lowercase.
-
-Example:
-
-```text
-THISISMYEMAIL@EMAIL.COM
-
-↓
-
-thisismyemail@email.com
-```
-
-### Name Formatting
-
-Examples:
-
-```text
-Doe-smith
-→
-Doe-Smith
-
-Kerri-ann
-→
-Kerri-Ann
-
-Mcdonald
-→
-McDonald
-```
-
----
-
-## Removed
-
-### Debug Output
-
-Removed:
-
-```text
-ASSOCIATE IN ARTS ->
-...
-```
-
-Removed:
-
-```text
-Done
-```
-
-in favor of progress reporting and diagnostics.
-
----
-
-# [2026-07-01]
+Date: August 2026
 
 ## Added
 
-### Initial Architecture
+Constituent-level update tracking.
 
-- Canonical constituent model
-- Degree mapping
-- Campus mapping
-- Education transformation
-- Military transformation
-- Relationship transformation
-- Existing ID matching
+### New Metadata
 
-### Outputs
+- update_flags
+- update_actions
 
-- Constituent JSON
-- Diagnostics JSON
-- Schema Analysis JSON
+### Supported Actions
+
+- EMPLOYMENT
+- EDUCATION
+
+## Benefits
+
+- Identifies actionable updates for EXISTING records.
+- Simplifies future SKY API integration.
+- Eliminates downstream re-evaluation of update eligibility.
+
+---
+
+# v1.2.0 - Recent Activity Window Expansion
+
+Date: August 2026
+
+## Changed
+
+- Recent activity window increased from:
+  - 90 days
+  - to 120 days
+
+## Impact
+
+- Employment records qualifying after April 21, 2026 remain actionable.
+- Education records qualifying after April 21, 2026 remain actionable.
+
+---
+
+# v1.1.0 - Employment Date Normalization
+
+Date: August 2026
+
+## Fixed
+
+Employment date handling.
+
+### Normalized Values
+
+The following values now normalize to blank:
+
+- N/A
+- NA
+- NULL
+- NONE
+
+## Benefits
+
+- Prevents positional alignment failures.
+- Prevents incorrect date assignment.
+
+---
+
+# v1.0.0 - Employment Processing Rewrite
+
+Date: August 2026
+
+## Fixed
+
+Pipe-delimited employment processing.
+
+### Fields
+
+- ORPos
+- ORProf
+- ORFromDate
+- ORToDate
+- ORIndustry
+
+### Improvements
+
+- Preserves positional alignment.
+- Correctly generates multiple employment records.
+- Prevents dates from shifting to adjacent positions.
+
+## Added
+
+- split_preserving_positions()
+
+---
+
+# v0.9.0 - Newest File Resolution
+
+Date: August 2026
+
+## Changed
+
+File discovery now automatically selects the newest matching file.
+
+### Previous Behavior
+
+- First file returned by filesystem.
+
+### New Behavior
+
+- Most recently modified file.
+
+## Benefits
+
+- Eliminates stale input selection.
+- Supports multiple export sets.
+
+---
+
+# v0.8.0 - Working Directory Independence
+
+Date: August 2026
+
+## Changed
+
+Introduced SCRIPT_DIR-based path resolution.
+
+### Previous Behavior
+
+- Depended on current PowerShell directory.
+
+### New Behavior
+
+- Uses script location.
+
+## Benefits
+
+- Reliable execution from any location.
+- Improved compatibility with automation tools.
+
+---
+
+# v0.7.0 - Run Folder Architecture
+
+Date: August 2026
+
+## Changed
+
+Removed:
+
+- OLD\ archive structure
+
+Added:
+
+- output\YYYY-MM-DD\
+
+## Benefits
+
+- Self-contained run folders.
+- Simpler artifact management.
+- Easier SharePoint synchronization.
+
+---
+
+# v0.6.0 - Transformation Diagnostics
+
+Date: August 2026
+
+## Added
+
+Diagnostics generation.
+
+### Metrics
+
+- total_constituents
+- new_records
+- existing_records
+- phone_records
+- employment_records
+- degree_records
+- military_records
+- relationship_records
+
+### Validation
+
+- warnings
+- relationship_warnings
+
+---
+
+# v0.5.0 - JSON Serialization Framework
+
+Date: August 2026
+
+## Added
+
+Canonical JSON outputs:
+
+- constituents.json
+- diagnostics.json
+- schema_analysis.json
+
+## Benefits
+
+- Full model visibility.
+- Improved troubleshooting.
+- Future API readiness.
+
+---
+
+# v0.4.0 - Dynamic Schema Analysis
+
+Date: August 2026
+
+## Added
+
+Automatic schema discovery.
+
+### Metrics
+
+- max_phone_records
+- max_employment_records
+- max_degree_records
+- max_major_records
+- max_minor_records
+- max_military_records
+- max_relationship_records
+
+---
+
+# v0.3.0 - Canonical Object Model Expansion
+
+Date: July-August 2026
+
+## Added
+
+Structured constituent collections:
+
+- phones[]
+- employment[]
+- education[]
+- military[]
+- relationships[]
+
+## Benefits
+
+- Single source of truth.
+- Easier exporters.
+- API-ready architecture.
+
+---
+
+# v0.2.0 - ETL Framework Expansion
+
+Date: July 2026
+
+## Added
+
+Support for:
+
+- Core Export
+- Activities Export
+- Education Export
+- Military Export
+- Relationships Export
+
+## Added
+
+Existing/New constituent detection.
+
+### Matching Methods
+
+- Lookup ID
+- SKY ID
+- ConsImportID
+
+---
+
+# v0.1.0 - Initial Release
+
+Date: July 15, 2026
+
+## Added
+
+Initial CT Process ETL framework.
+
+### Core Capabilities
+
+- Constituent transformation pipeline.
+- Dynamic CSV export.
+- Review workbook generation.
+- ConsCode evaluation.
+
+### Business Rules
+
+- Employment qualification window.
+- Education qualification window.
+- Existing vs New record handling.
