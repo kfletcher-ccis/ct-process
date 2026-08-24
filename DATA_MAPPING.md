@@ -1,235 +1,147 @@
-# Data Mapping and Business Rules
+# DATA MAPPING
 
-This document defines all business logic implemented by the CT Process Constituent Transformation Engine.
+## Canonical Constituent Structure
+
+### Core
+
+Contains original source values.
+
+Examples:
+
+```json
+{
+  "ORPos": "Adjunct - Distance Education||Adjunct - Mathematics",
+  "ORProf": "Online||Mathematics",
+  "ORFromDate": "07/20/2026||01/12/2026"
+}
+```
+
+Core represents source data exactly as received.
 
 ---
 
-# Input Sources
+## Employment Mapping
 
-## Core Export
+### Source Fields
 
-```text
-RENXT-EXPORT_[DATE].csv
-```
-
-Used for:
-
-- Constituent information
-- Name information
-- Address information
-- Employment information
-- Phones
-- Emails
+| Source | Target |
+|----------|----------|
+| ORPos | employment.position |
+| ORProf | employment.profession |
+| ORFromDate | employment.from_date |
+| ORToDate | employment.to_date |
+| ORIndustry | employment.industry |
+| ORFullName | employment.organization |
 
 ---
 
-## Activities Export
+### Employment Processing Rules
+
+#### Positional Alignment
+
+All employment fields are split using:
 
 ```text
-RENXT-EXPORT_Activities_File_[DATE].csv
+||
 ```
 
-Used for:
-
-- Education activity injection
-
----
-
-## Education Export
-
-```text
-RENXT-EXPORT_Education_File_[DATE].csv
-```
-
-Used for:
-
-- Degrees
-- Majors
-- Minors
-- Attributes
-- Class year
-
----
-
-## Military Export
-
-```text
-RENXT-EXPORT_Military_File_[DATE].csv
-```
-
-Used for:
-
-- Military service affiliations
-
----
-
-## Relationship Export
-
-```text
-RENXT-EXPORT_Relationships_File_[DATE].csv
-```
-
-Used for:
-
-- Personal relationships
-
----
-
-# Constituent Classification
-
-## Record Status
-
-### NEW
-
-Constituent does not exist in:
-
-```text
-CT_Process__Existing_IDs.xlsx
-```
-
-Output:
-
-```text
-record_status = NEW
-```
-
----
-
-### EXISTING
-
-Constituent exists in:
-
-```text
-CT_Process__Existing_IDs.xlsx
-```
-
-Output:
-
-```text
-record_status = EXISTING
-```
-
----
-
-# ConsCode Rules
-
-## NEW Constituents
-
-### Employment Only
-
-```text
-Employment = Yes
-Education = No
-```
-
-Output:
-
-```text
-Employee
-```
-
----
-
-### Education Only
-
-```text
-Employment = No
-Education = Yes
-```
-
-Output:
-
-```text
-Alumni
-```
-
----
-
-### Employment and Education
-
-```text
-Employment = Yes
-Education = Yes
-```
-
-Output:
-
-```text
-Employee
-Alumni
-```
-
----
-
-## Existing Constituents
-
-Current implementation:
-
-```text
-ConsCode is informational only.
-```
-
-Future updates may automate Constituent Code assignment through RE NXT connectors.
-
----
-
-# Education Rules
-
-## Degree Translation
-
-Degrees are translated using:
-
-```text
-Degree-Location Program Codes.xlsx
-```
+while preserving positional alignment.
 
 Example:
 
 ```text
-ASSOCIATE IN ARTS
+ORPos:
+A||B
 
-↓
+ORFromDate:
+2026-07-20||2026-01-12
 
-Associate in Arts
+ORToDate:
+N/A||2026-05-03
+```
+
+Produces:
+
+```text
+Employment 1
+    Position A
+    From 2026-07-20
+    To blank
+
+Employment 2
+    Position B
+    From 2026-01-12
+    To 2026-05-03
 ```
 
 ---
 
-## Campus Translation
+### Null Handling
 
-Campus codes are translated using:
-
-```text
-Degree-Location Program Codes.xlsx
-```
-
-Example:
+The following values normalize to blank:
 
 ```text
-MOD
-
-↓
-
-Whiteman AFB, MO (MOD)
+N/A
+NA
+NULL
+NONE
 ```
 
 ---
 
-## Existing Constituent Filtering
+### Employment Filtering
 
-For EXISTING constituents:
-
-Degrees are retained only when:
+Only records meeting the configured activity window survive:
 
 ```text
-graduation_date is within the last 90 days
+120 days
+```
+
+A record qualifies when:
+
+```text
+from_date within 120 days
+OR
+to_date within 120 days
 ```
 
 ---
 
-## New Constituent Filtering
+## Education Mapping
 
-For NEW constituents:
+### Source
+
+Education export.
+
+### Canonical Structure
+
+```json
+{
+  "school_name": "...",
+  "degree": "...",
+  "major": "...",
+  "minor": "...",
+  "graduation_date": "..."
+}
+```
+
+---
+
+### Education Filtering
+
+For EXISTING records:
+
+```text
+graduation_date
+```
+
+must fall within:
+
+```text
+120 days
+```
+
+For NEW records:
 
 ```text
 All education records retained
@@ -237,200 +149,54 @@ All education records retained
 
 ---
 
-# Employment Rules
+## Update Detection
 
-Employment retained when:
+### EXISTING Records
 
-```text
-from_date within 90 days
+Employment update:
 
-OR
-
-to_date within 90 days
+```python
+len(constituent.employment) > 0
 ```
 
-This rule applies to:
+Education update:
 
-```text
-NEW
-EXISTING
+```python
+len(constituent.education) > 0
 ```
 
-constituents.
+Produces:
 
----
-
-# Relationship Rules
-
-Relationships are exported as:
-
-```text
-IRLink
-IRRelat
-IRRecip
+```json
+{
+  "update_flags": {},
+  "update_actions": []
+}
 ```
 
-Relationship records are retained exactly as provided by transformation logic.
-
----
-
-# Address Rules
-
-## Duplicate Address Suppression
-
-When:
+### Supported Actions
 
 ```text
-AddrType_2 = AddrType
-```
-
-Second address block is cleared.
-
-Fields cleared:
-
-```text
-AddrLines_2
-AddrCity_2
-AddrCountry_2
-AddrCounty_2
-AddrState_2
-AddrZIP_2
-AddrSeasFrom_2
-AddrType_2
-AddrValidFrom_2
-AddrValidTo_2
-PrefAddr_2
+EMPLOYMENT
+EDUCATION
 ```
 
 ---
 
-# Name Normalization
+## JSON Outputs
 
-Applied to:
+### constituents.json
 
-```text
-FirstName
-MidName
-LastName
-NickName
-AliasName
-```
+Canonical constituent model.
 
-Examples:
+### diagnostics.json
 
-```text
-Doe-smith
-→
-Doe-Smith
-```
+Processing metrics.
 
-```text
-Kerri-ann
-→
-Kerri-Ann
-```
+### schema_analysis.json
 
-```text
-Mcdonald
-→
-McDonald
-```
+Dynamic cardinality analysis.
 
-```text
-Mcdougal
-→
-McDougal
-```
+### process_summary.json
 
----
-
-# Email Normalization
-
-Applied to all email values detected in phone/email output.
-
-Examples:
-
-```text
-THISISMYEMAIL@EMAIL.COM
-
-↓
-
-thisismyemail@email.com
-```
-
----
-
-# Export Rules
-
-## CSV
-
-Purpose:
-
-```text
-CT Process Import
-```
-
-Primary deliverable.
-
----
-
-## Review Workbook
-
-Purpose:
-
-```text
-Human validation
-```
-
-Contains:
-
-```text
-Grouped columns
-Filters
-Freeze panes
-Section colors
-Warnings
-```
-
----
-
-# Future Business Rules
-
-## Existing Constituent Updates
-
-Future architecture:
-
-```text
-Python
-    ↓
-Change Detection
-    ↓
-JSON Output
-    ↓
-Power Automate
-    ↓
-RE NXT Connector
-```
-
-Potential automated updates:
-
-```text
-Education
-
-Employment
-
-Organizational Relationships
-```
-
-without passing the constituent through CT Process.
-
----
-
-# Source of Truth
-
-In the event of a conflict:
-
-1. DATA_MAPPING.md
-2. CHANGELOG.md
-3. Source code
-4. Legacy documentation
+Run-level operational reporting.
