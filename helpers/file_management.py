@@ -66,7 +66,7 @@ def get_processing_timestamp(filename):
         "month": month,
         "year": year,
         "time": time_part,
-        "raw": f"{day}-{month}-{year}_{time_part}",
+        "raw": f"{year}-{month}-{day}_{time_part}",
         "folder_date": f"{year}-{month}-{day}"
     }
 
