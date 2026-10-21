@@ -235,9 +235,40 @@ try:
         str(csv_file)
     )
 
-    # ------------------------------------------------------
-    # Archive Inputs
-    # ------------------------------------------------------
+# ------------------------------------------------------
+# Generated Files
+# ------------------------------------------------------
+
+    print()
+    print("=" * 60)
+    print("GENERATED FILES")
+    print("=" * 60)
+
+    print(
+        f"Constituents JSON : {constituents_file}"
+    )
+
+    print(
+        f"Diagnostics JSON  : {diagnostics_file}"
+    )
+
+    print(
+        f"Schema Analysis   : {schema_file}"
+    )
+
+    print(
+        f"Review Workbook   : {review_file}"
+    )
+
+    print(
+        f"CSV Export        : {csv_file}"
+    )
+
+
+
+# ------------------------------------------------------
+# Archive Inputs
+# ------------------------------------------------------
 
     archive_run_artifacts(
         project_root=SCRIPT_DIR,
@@ -549,32 +580,11 @@ try:
         f"CSV Export: {csv_file}"
     )
 
+# ------------------------------------------------------
+# EXCEPT
+# ------------------------------------------------------
+
 except Exception as ex:
-
-    print()
-    print("=" * 60)
-    print("GENERATED FILES")
-    print("=" * 60)
-
-    print(
-        f"Constituents JSON : {constituents_file}"
-    )
-
-    print(
-        f"Diagnostics JSON  : {diagnostics_file}"
-    )
-
-    print(
-        f"Schema Analysis   : {schema_file}"
-    )
-
-    print(
-        f"Review Workbook   : {review_file}"
-    )
-
-    print(
-        f"CSV Export        : {csv_file}"
-    )
 
     print()
     print("=" * 60)
