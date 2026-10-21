@@ -4,6 +4,90 @@ All notable changes to the CT Process ETL project are documented in this file.
 
 ---
 
+# v1.7.0 - Timestamp Standardization and Runtime Hardening
+
+Date: October 21, 2026
+
+## Changed
+
+- Standardized CT Process internal run timestamps on the sortable format:
+  - `yyyy-MM-dd_HH-mm-ss`
+- Preserved the source RENXT export filename convention while normalizing the parsed timestamp used by CT Process.
+- Updated `get_processing_timestamp()` so `timestamp["raw"]` is assembled as:
+  - `year-month-day_time`
+- Standardized generated JSON, workbook, CSV, and process-summary filenames on the normalized run timestamp.
+- Retained date-only local output folders in `yyyy-MM-dd` format.
+- Restricted the `GENERATED FILES` report to the successful execution path so failed runs are not presented as completed runs.
+
+## Added
+
+- Added resilient CSV decoding to the shared CSV loader:
+  - UTF-8 is attempted first.
+  - If UTF-8 decoding fails, loading automatically retries with Windows-1252 (`cp1252`).
+- Added a clear console message when the loader falls back from UTF-8 to Windows-1252.
+
+## Fixed
+
+- Prevented RENXT CSV exports containing Windows-encoded characters, including non-breaking spaces, from failing during `pandas.read_csv()` decoding.
+- Eliminated inconsistent `dd-MM-yyyy_HH-mm-ss` values in generated filenames and `process_summary.json`.
+- Improved chronological sorting and cross-system run correlation among CT Process, Power Automate Desktop, SharePoint archives, and cloud-flow logs.
+- Corrected exception handling so failures occurring before output paths are initialized do not raise a secondary `NameError` for variables such as `review_file`.
+- Preserved the original processing exception and traceback instead of masking it with output-reporting errors.
+- Prevented unsuccessful runs from printing misleading generated-file paths.
+
+---
+
+# v1.6.0 - SharePoint Archiving and Power Automate Integration
+
+Date: September 2026
+
+## Added
+
+- Added Power Automate Desktop processing to upload CT Process JSON artifacts to SharePoint.
+- Added replaceable root working copies for downstream automation:
+  - `constituents.json`
+  - `diagnostics.json`
+  - `process_summary.json`
+  - `schema_analysis.json`
+- Added timestamped SharePoint archive folders containing forensic copies of each run's JSON artifacts.
+- Added the SharePoint `CT Process Run Log` list for run-level status, counts, timestamps, source-file references, and error summaries.
+- Added the SharePoint `CT Process Change Log` list for atomic comparisons and changes, including before/after values, proposed values, payloads, outcomes, and error details.
+- Added run-level and change-level forensic references to archived constituent JSON files.
+- Added Central Time formatting for timestamps embedded in human-readable text while retaining UTC for SharePoint Date/Time columns and calculations.
+
+## Changed
+
+- Revised the Power Automate Desktop upload order so archived JSON copies are created before root working files are overwritten.
+- Adopted `process_summary.json` as the cloud-flow orchestration trigger and run manifest.
+- Adopted `run_timestamp` as the shared run identifier across Python output, Power Automate Desktop, SharePoint archive folders, the Run Log, and the Change Log.
+- Revised constituent-processing logic so the archived `constituents` file can provide both processing content and forensic source metadata.
+- Converted `constituents.json` from a lookup-ID-keyed JSON object to a root JSON array for direct use by Power Automate `Filter array` and `Apply to each` actions.
+
+## Power Automate Processor Architecture
+
+- Added or designed scopes for:
+  - Retrieving current RENXT constituent data
+  - Comparing Employment records
+  - Comparing Education records
+  - Comparing Names and Aliases
+  - Executing approved changes
+  - Constituent-level exception handling
+- Added run and change counters for attempted, successful, failed, skipped, Employment, Education, Name, and Alias operations.
+- Established sequential constituent processing to protect shared counters and preserve deterministic logging.
+- Defined Pending, Succeeded, Failed, Skipped, No Change, and Needs Review outcomes for change operations.
+
+## Name and Demographic Review Design
+
+- Defined a review-only rule for Last Name discrepancies so incoming data does not automatically overwrite a potentially newer RENXT value.
+- Defined Birth Date handling:
+  - Populate RENXT when the incoming value exists and RENXT is blank.
+  - Take no action when the values match.
+  - Log and flag the difference for review when both values exist but differ.
+- Reserved selected Alias comparison and update logic for a later implementation phase.
+
+---
+
+
 # v1.5.0 - Automated Reporting Foundation
 Date: August 2026
 
