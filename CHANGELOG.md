@@ -4,89 +4,69 @@ All notable changes to the CT Process ETL project are documented in this file.
 
 ---
 
-# v1.7.0 - Timestamp Standardization and Runtime Hardening
+# v1.6.0 - PAD Automation and Repeated-Field Compatibility
 
-Date: October 21, 2026
-
-## Changed
-
-- Standardized CT Process internal run timestamps on the sortable format:
-  - `yyyy-MM-dd_HH-mm-ss`
-- Preserved the source RENXT export filename convention while normalizing the parsed timestamp used by CT Process.
-- Updated `get_processing_timestamp()` so `timestamp["raw"]` is assembled as:
-  - `year-month-day_time`
-- Standardized generated JSON, workbook, CSV, and process-summary filenames on the normalized run timestamp.
-- Retained date-only local output folders in `yyyy-MM-dd` format.
-- Restricted the `GENERATED FILES` report to the successful execution path so failed runs are not presented as completed runs.
+Date: November 18, 2026
 
 ## Added
 
-- Added resilient CSV decoding to the shared CSV loader:
-  - UTF-8 is attempted first.
-  - If UTF-8 decoding fails, loading automatically retries with Windows-1252 (`cp1252`).
-- Added a clear console message when the loader falls back from UTF-8 to Windows-1252.
+- `run_ct_process.bat` as an unattended Windows entry point for the existing CT Process File Transfer PAD flow.
+- Python launcher detection:
+  - Prefers `py -3`.
+  - Falls back to `python`.
+- Exit-code propagation from `run_ct_process.py` to PAD.
+- Explicit batch error codes for a missing Python script and an unavailable Python installation.
+- PAD execution, success, failure, and post-run verification guidance.
 
 ## Fixed
 
-- Prevented RENXT CSV exports containing Windows-encoded characters, including non-breaking spaces, from failing during `pandas.read_csv()` decoding.
-- Eliminated inconsistent `dd-MM-yyyy_HH-mm-ss` values in generated filenames and `process_summary.json`.
-- Improved chronological sorting and cross-system run correlation among CT Process, Power Automate Desktop, SharePoint archives, and cloud-flow logs.
-- Corrected exception handling so failures occurring before output paths are initialized do not raise a secondary `NameError` for variables such as `review_file`.
-- Preserved the original processing exception and traceback instead of masking it with output-reporting errors.
-- Prevented unsuccessful runs from printing misleading generated-file paths.
+### `helpers/common.py`
 
----
-
-# v1.6.0 - SharePoint Archiving and Power Automate Integration
-
-Date: September 2026
-
-## Added
-
-- Added Power Automate Desktop processing to upload CT Process JSON artifacts to SharePoint.
-- Added replaceable root working copies for downstream automation:
-  - `constituents.json`
-  - `diagnostics.json`
-  - `process_summary.json`
-  - `schema_analysis.json`
-- Added timestamped SharePoint archive folders containing forensic copies of each run's JSON artifacts.
-- Added the SharePoint `CT Process Run Log` list for run-level status, counts, timestamps, source-file references, and error summaries.
-- Added the SharePoint `CT Process Change Log` list for atomic comparisons and changes, including before/after values, proposed values, payloads, outcomes, and error details.
-- Added run-level and change-level forensic references to archived constituent JSON files.
-- Added Central Time formatting for timestamps embedded in human-readable text while retaining UTC for SharePoint Date/Time columns and calculations.
+- Updated `repeated_values()` to support both repeated-column naming conventions used by CT Process sources:
+  - Pandas duplicate-header suffixes: `Field`, `Field.1`, `Field.2`, ...
+  - Explicit numbered suffixes: `Field`, `Field_2`, `Field_3`, ...
+- Restored extraction of all populated phone and email records rather than only the unsuffixed first record.
+- Preserved compatibility with callers that use explicit underscore-numbered fields.
+- Retained compact output behavior by omitting blank repeated values.
 
 ## Changed
 
-- Revised the Power Automate Desktop upload order so archived JSON copies are created before root working files are overwritten.
-- Adopted `process_summary.json` as the cloud-flow orchestration trigger and run manifest.
-- Adopted `run_timestamp` as the shared run identifier across Python output, Power Automate Desktop, SharePoint archive folders, the Run Log, and the Change Log.
-- Revised constituent-processing logic so the archived `constituents` file can provide both processing content and forensic source metadata.
-- Converted `constituents.json` from a lookup-ID-keyed JSON object to a root JSON array for direct use by Power Automate `Filter array` and `Apply to each` actions.
+### `README.md`
 
-## Power Automate Processor Architecture
+- Updated the production project root from `C:\Users\kfletcher\CTinput` to `C:\PAD\CTinput`.
+- Added the PAD/batch quick-start procedure.
+- Documented required inputs, generated outputs, success criteria, and repeated-field compatibility.
+- Added a file-by-file summary of the v1.6.0 repository changes.
 
-- Added or designed scopes for:
-  - Retrieving current RENXT constituent data
-  - Comparing Employment records
-  - Comparing Education records
-  - Comparing Names and Aliases
-  - Executing approved changes
-  - Constituent-level exception handling
-- Added run and change counters for attempted, successful, failed, skipped, Employment, Education, Name, and Alias operations.
-- Established sequential constituent processing to protect shared counters and preserve deterministic logging.
-- Defined Pending, Succeeded, Failed, Skipped, No Change, and Needs Review outcomes for change operations.
+### `OPERATIONS.md`
 
-## Name and Demographic Review Design
+- Updated all production commands and paths to `C:\PAD\CTinput`.
+- Made `run_ct_process.bat` the recommended production entry point.
+- Added the CT Process File Transfer PAD handoff sequence.
+- Added recommended PAD run settings, exit-code handling, post-run verification, and troubleshooting.
+- Added regression checks for aliases, phones/emails, majors, minors, and education attributes after shared helper changes.
 
-- Defined a review-only rule for Last Name discrepancies so incoming data does not automatically overwrite a potentially newer RENXT value.
-- Defined Birth Date handling:
-  - Populate RENXT when the incoming value exists and RENXT is blank.
-  - Take no action when the values match.
-  - Log and flag the difference for review when both values exist but differ.
-- Reserved selected Alias comparison and update logic for a later implementation phase.
+### `CHANGELOG.md`
+
+- Added this v1.6.0 release entry covering every repository file changed for the repeated-field fix, working-directory move, documentation refresh, and PAD launcher.
+
+## Changed Files
+
+| File | Change |
+|---|---|
+| `helpers/common.py` | Supports dot-suffixed and underscore-suffixed repeated fields. |
+| `run_ct_process.bat` | New unattended launcher for PAD and manual execution. |
+| `README.md` | Updated path and end-to-end operating guidance. |
+| `OPERATIONS.md` | Updated runbook and PAD integration contract. |
+| `CHANGELOG.md` | Added the v1.6.0 release record. |
+
+## Compatibility Notes
+
+- No changes are required in `transformers/core_transformer.py` or `transformers/education_transformer.py`; their existing calls to `repeated_values()` use the expanded helper behavior.
+- The batch launcher does not pause, so the current PAD flow can wait for completion without keyboard interaction.
+- The batch launcher resolves `run_ct_process.py` relative to the batch file, while the production PAD configuration continues to call it at `C:\PAD\CTinput\run_ct_process.bat`.
 
 ---
-
 
 # v1.5.0 - Automated Reporting Foundation
 Date: August 2026
