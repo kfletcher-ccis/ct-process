@@ -73,20 +73,65 @@ def normalize_duplicate_columns(columns: Iterable[str]) -> List[str]:
         output.append(base if counts[base] == 1 else f"{base}_{counts[base]}")
     return output
 
-def repeated_values(row, base_name: str, max_count: int | None = None) -> List[str]:
-    values=[]
+def repeated_values(
+    row,
+    base_name: str,
+    max_count: int | None = None
+) -> List[str]:
+    """
+    Return populated values from a repeated field set.
+
+    Supports both repeated-column naming conventions used by
+    CT Process source data:
+
+        Pandas duplicate headers:
+            Field
+            Field.1
+            Field.2
+
+        Explicit numbered fields:
+            Field
+            Field_2
+            Field_3
+
+    Blank values are omitted from the returned list.
+    """
+
+    values = []
+
     if max_count is None:
-        max_count=50
-    for i in range(1, max_count+1):
-        field = base_name if i == 1 else f"{base_name}_{i}"
-        if field not in row.index:
-            if i == 1:
-                continue
-            # keep scanning lightly because some duplicate-normalized sets may skip in odd cases
+        max_count = 50
+
+    for i in range(max_count):
+
+        if i == 0:
+            candidates = [
+                base_name
+            ]
+
+        else:
+            candidates = [
+                f"{base_name}.{i}",
+                f"{base_name}_{i + 1}",
+            ]
+
+        field = None
+
+        for candidate in candidates:
+            if candidate in row.index:
+                field = candidate
+                break
+
+        if field is None:
             continue
-        val = clean_null_value(row.get(field, ""))
+
+        val = clean_null_value(
+            row.get(field, "")
+        )
+
         if val:
             values.append(val)
+
     return values
 
 from datetime import date, timedelta
